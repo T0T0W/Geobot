@@ -1,0 +1,22 @@
+name: Build custom USB HID Client
+on:
+  push:
+    branches:
+      - chatgpt-hid-azerty-touchpad-build
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build custom APK
+        run: bash build_hid_client.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: USB-HID-Client-AZERTY-Touchpad
+          path: out/USB-HID-Client-AZERTY-Touchpad.apk
