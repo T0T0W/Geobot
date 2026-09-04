@@ -12,36 +12,17 @@ from pathlib import Path
 # Pass the failed HID report to MainViewModel so it can repair permissions and retry it once.
 p = Path("app/src/main/java/me/arianb/usb_hid_client/report_senders/ReportSender.kt")
 s = p.read_text()
-old = '''    suspend fun start(onSuccess: () -> Unit, onException: (e: IOException) -> Unit) = withContext(Dispatchers.IO) {
-        for (report in reportsChannel) {
-            try {
-                Timber.d("REPORT HEX (len = %d): %s", report.size, report.toHexString())
-                sendReport(report)
-                onSuccess()
-            } catch (e: IOException) {
-                Timber.d(e)
-                onException(e)
-            }
-        }
-    }
-'''
-new = '''    suspend fun start(onSuccess: () -> Unit, onException: (e: IOException, failedReport: ByteArray) -> Unit) = withContext(Dispatchers.IO) {
-        for (report in reportsChannel) {
-            try {
-                Timber.d("REPORT HEX (len = %d): %s", report.size, report.toHexString())
-                sendReport(report)
-                onSuccess()
-            } catch (e: IOException) {
-                Timber.d(e)
-                // Give the caller the exact failed report so a permission repair can retry it.
-                onException(e, report)
-            }
-        }
-    }
-'''
-if old not in s:
-    raise SystemExit("ReportSender.start block not found")
-p.write_text(s.replace(old, new))
+old_sig = '    suspend fun start(onSuccess: () -> Unit, onException: (e: IOException) -> Unit) = withContext(Dispatchers.IO) {'
+new_sig = '    suspend fun start(onSuccess: () -> Unit, onException: (e: IOException, failedReport: ByteArray) -> Unit) = withContext(Dispatchers.IO) {'
+if old_sig not in s:
+    raise SystemExit("ReportSender.start signature not found")
+s = s.replace(old_sig, new_sig, 1)
+old_callback = '                onException(e)\n'
+new_callback = '                // Give the caller the exact failed report so a permission repair can retry it.\n                onException(e, report)\n'
+if old_callback not in s:
+    raise SystemExit("ReportSender onException call not found")
+s = s.replace(old_callback, new_callback, 1)
+p.write_text(s)
 
 # Automatically repair /dev/hidg* ownership/mode/SELinux context before sender startup,
 # and transparently repair+retry once if an EACCES/permission denied still occurs later.
