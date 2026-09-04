@@ -15,8 +15,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Build custom APK
-        run: bash build_hid_client.sh
+        run: bash rebuild_touchpad_v2.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: USB-HID-Client-AZERTY-Touchpad
-          path: out/USB-HID-Client-AZERTY-Touchpad.apk
+          name: USB-HID-Client-AZERTY-Touchpad-v2
+          path: out/USB-HID-Client-AZERTY-Touchpad-v2.apk
